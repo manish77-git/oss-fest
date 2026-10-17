@@ -198,7 +198,7 @@ Protected endpoints require the `Authorization: Bearer <TOKEN>` header.
     *(Note: Passwords, password hashes, and tokens are strictly excluded from the registration response)*
 
 - **`POST /api/auth/login`**
-  - **Auth**: Public
+  - **Auth**: Public (Rate-limited: 10 attempts / 15 minutes per IP)
   - **Body**:
     ```json
     {
@@ -206,7 +206,26 @@ Protected endpoints require the `Authorization: Bearer <TOKEN>` header.
       "password": "securePassword123"
     }
     ```
-  - **Response** `200 OK`: Returns JWT `token` and sanitized `user` object.
+  - **Response** `200 OK`:
+    ```json
+    {
+      "message": "Login successful",
+      "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "tokenType": "Bearer",
+      "expiresIn": 1800,
+      "user": {
+        "id": "cmvc...",
+        "displayName": "Alex Chen",
+        "email": "student@college.edu"
+      }
+    }
+    ```
+  - **Security Features**:
+    - Constant-time password verification via `bcryptjs`.
+    - Generic `401 Unauthorized` response for both incorrect password and non-existent email to prevent user enumeration.
+    - Signed short-lived JWT access token with standard `sub`, `iss` (`campusconnect`), and `aud` (`campusconnect-api`) claims.
+    - Abuse protection: returns `429 Too Many Requests` with a `Retry-After` header when rate limits are exceeded.
+    - Stateless token lifecycle: tokens expire automatically after `expiresIn` seconds (1800s / 30m); clients log out by discarding the stored token.
 
 ---
 

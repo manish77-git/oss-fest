@@ -307,28 +307,237 @@ describe('Student Registration API (Feature 03)', () => {
     });
   });
 
-  describe('Existing Login Functionality Compatibility', () => {
-    it('verifies that a registered student can subsequently log in', async () => {
-      const regRes = await request(app)
+  describe('POST /api/auth/login (Feature 04: Login & Authentication)', () => {
+    beforeEach(async () => {
+      // Register a student for login testing
+      await request(app)
         .post('/api/auth/register')
         .send({
           displayName: 'Login Test Student',
           email: 'login.test@campus.edu',
-          password: 'myPassword123',
+          password: 'correctPassword123',
         });
+    });
 
-      expect(regRes.status).toBe(201);
-
-      const loginRes = await request(app)
+    it('authenticates a registered student with valid credentials and returns 200 with JWT', async () => {
+      const res = await request(app)
         .post('/api/auth/login')
         .send({
           email: 'login.test@campus.edu',
-          password: 'myPassword123',
+          password: 'correctPassword123',
         });
 
-      expect(loginRes.status).toBe(200);
-      expect(loginRes.body.token).toBeDefined();
-      expect(loginRes.body.user.email).toBe('login.test@campus.edu');
+      expect(res.status).toBe(200);
+      expect(res.body.message).toBe('Login successful');
+      expect(res.body.accessToken).toBeDefined();
+      expect(res.body.tokenType).toBe('Bearer');
+      expect(res.body.expiresIn).toBe(1800);
+      expect(res.body.user).toBeDefined();
+      expect(res.body.user.email).toBe('login.test@campus.edu');
+      expect(res.body.user.displayName).toBe('Login Test Student');
+
+      // Security check: passwords and hashes must never appear in response
+      expect(res.body.user.password).toBeUndefined();
+      expect(res.body.user.passwordHash).toBeUndefined();
+      expect(res.body.password).toBeUndefined();
+      expect(res.body.passwordHash).toBeUndefined();
+    });
+
+    it('issues a JWT access token that can be verified and contains standard claims', async () => {
+      const { verifyAccessToken } = await import('../src/services/token.service');
+      const jwt = (await import('jsonwebtoken')).default;
+      const { config } = await import('../src/config');
+
+      const res = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: 'login.test@campus.edu',
+          password: 'correctPassword123',
+        });
+
+      expect(res.status).toBe(200);
+      const token = res.body.accessToken;
+
+      // Verify token cryptographic signature and standard claims using token service
+      const verified = verifyAccessToken(token);
+      expect(verified.userId).toBe(res.body.user.id);
+      expect(verified.email).toBe('login.test@campus.edu');
+
+      // Decode token to verify subject, issuer, audience, and expiration
+      const decoded = jwt.decode(token) as Record<string, unknown>;
+      expect(decoded.sub).toBe(res.body.user.id);
+      expect(decoded.iss).toBe('campusconnect');
+      expect(decoded.aud).toBe('campusconnect-api');
+      expect(decoded.exp).toBeDefined();
+      expect(typeof decoded.exp).toBe('number');
+
+      // Verify token payload does not contain sensitive password or hash
+      expect(decoded.password).toBeUndefined();
+      expect(decoded.passwordHash).toBeUndefined();
+    });
+
+    it('normalizes email during login (trimmed, case-insensitive)', async () => {
+      const res = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: '   LOGIN.TEST@CAMPUS.EDU   ',
+          password: 'correctPassword123',
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.accessToken).toBeDefined();
+      expect(res.body.user.email).toBe('login.test@campus.edu');
+    });
+
+    it('rejects incorrect password with generic 401 Unauthorized', async () => {
+      const res = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: 'login.test@campus.edu',
+          password: 'wrongPassword999',
+        });
+
+      expect(res.status).toBe(401);
+      expect(res.body.error.code).toBe('UNAUTHORIZED');
+      expect(res.body.error.message).toBe('Invalid email or password');
+    });
+
+    it('rejects unregistered email with identical generic 401 Unauthorized (enumeration prevention)', async () => {
+      const res = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: 'unregistered.user@campus.edu',
+          password: 'correctPassword123',
+        });
+
+      expect(res.status).toBe(401);
+      expect(res.body.error.code).toBe('UNAUTHORIZED');
+      // Generic message prevents disclosing account existence
+      expect(res.body.error.message).toBe('Invalid email or password');
+    });
+
+    it('rejects missing email or missing password with 400 Bad Request', async () => {
+      // Missing password
+      const res1 = await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'login.test@campus.edu' });
+
+      expect(res1.status).toBe(400);
+      expect(res1.body.error.code).toBe('VALIDATION_ERROR');
+
+      // Missing email
+      const res2 = await request(app)
+        .post('/api/auth/login')
+        .send({ password: 'correctPassword123' });
+
+      expect(res2.status).toBe(400);
+      expect(res2.body.error.code).toBe('VALIDATION_ERROR');
+    });
+
+    it('rejects malformed JSON payload with HTTP 400', async () => {
+      const res = await request(app)
+        .post('/api/auth/login')
+        .set('Content-Type', 'application/json')
+        .send('{ "email": "login.test@campus.edu", "password": }');
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('INVALID_JSON');
+    });
+
+    it('rejects unexpected fields with strict validation (HTTP 400)', async () => {
+      const res = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: 'login.test@campus.edu',
+          password: 'correctPassword123',
+          rememberMe: true, // Unexpected field
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    });
+
+    it('handles database failure during login safely with HTTP 500 without false success', async () => {
+      const origFindUnique = prisma.user.findUnique;
+      (prisma.user as any).findUnique = vi.fn().mockRejectedValueOnce(
+        new Error('Database connectivity lost'),
+      );
+
+      try {
+        const res = await request(app)
+          .post('/api/auth/login')
+          .send({
+            email: 'login.test@campus.edu',
+            password: 'correctPassword123',
+          });
+
+        expect(res.status).toBe(500);
+        expect(res.body.error.code).toBe('INTERNAL_SERVER_ERROR');
+        expect(res.body.accessToken).toBeUndefined();
+      } finally {
+        (prisma.user as any).findUnique = origFindUnique;
+      }
+    });
+
+    it('enforces rate limiting on excessive login attempts (HTTP 429 Too Many Requests)', async () => {
+      const { configureLoginRateLimit, resetLoginRateLimiter } = await import(
+        '../src/middleware/rateLimit'
+      );
+
+      resetLoginRateLimiter();
+      configureLoginRateLimit({ max: 3, windowMs: 60000 });
+
+      try {
+        // Send 3 requests (allowed)
+        for (let i = 0; i < 3; i++) {
+          const res = await request(app)
+            .post('/api/auth/login')
+            .set('x-test-rate-limit', 'true')
+            .send({
+              email: 'login.test@campus.edu',
+              password: 'wrongPassword',
+            });
+          expect(res.status).toBe(401);
+        }
+
+        // 4th request exceeds threshold -> HTTP 429
+        const rateLimitedRes = await request(app)
+          .post('/api/auth/login')
+          .set('x-test-rate-limit', 'true')
+          .send({
+            email: 'login.test@campus.edu',
+            password: 'wrongPassword',
+          });
+
+        expect(rateLimitedRes.status).toBe(429);
+        expect(rateLimitedRes.body.error.code).toBe('TOO_MANY_REQUESTS');
+        expect(rateLimitedRes.headers['retry-after']).toBeDefined();
+      } finally {
+        resetLoginRateLimiter();
+        configureLoginRateLimit({ max: 10, windowMs: 900000 });
+      }
+    });
+
+    it('fails safely when JWT configuration is missing', async () => {
+      const { config } = await import('../src/config');
+      const origSecret = config.jwtSecret;
+
+      try {
+        config.jwtSecret = '';
+
+        const res = await request(app)
+          .post('/api/auth/login')
+          .send({
+            email: 'login.test@campus.edu',
+            password: 'correctPassword123',
+          });
+
+        expect(res.status).toBe(500);
+        expect(res.body.error.code).toBe('INTERNAL_SERVER_ERROR');
+        expect(res.body.accessToken).toBeUndefined();
+      } finally {
+        config.jwtSecret = origSecret;
+      }
     });
   });
 

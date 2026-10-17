@@ -50,10 +50,19 @@ export const registerSchema = z
   })
   .strict();
 
-export const loginSchema = z.object({
-  email: z.string().trim().email('Invalid email address'),
-  password: z.string().min(1, 'Password is required'),
-});
+export const loginSchema = z
+  .object({
+    email: z
+      .string({ required_error: 'Email is required' })
+      .trim()
+      .toLowerCase()
+      .email('Invalid email address format'),
+    password: z
+      .string({ required_error: 'Password is required' })
+      .min(1, 'Password is required'),
+  })
+  .strict();
+
 
 export const updateUserSchema = z.object({
   displayName: z

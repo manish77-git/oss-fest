@@ -47,6 +47,18 @@ export class ConflictError extends AppError {
   }
 }
 
+export class TooManyRequestsError extends AppError {
+  constructor(message = 'Too many requests. Please try again later.') {
+    super(message, 429, 'TOO_MANY_REQUESTS');
+  }
+}
+
+export class InternalServerError extends AppError {
+  constructor(message = 'An unexpected internal server error occurred', details?: unknown) {
+    super(message, 500, 'INTERNAL_SERVER_ERROR', details);
+  }
+}
+
 export function notFoundHandler(req: Request, _res: Response, next: NextFunction): void {
   next(new NotFoundError(`Route ${req.method} ${req.path} not found`));
 }

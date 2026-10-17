@@ -2,9 +2,10 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../db';
 import { registerSchema, loginSchema } from '../schemas';
-import { signToken } from '../middleware/auth';
 import { ConflictError, UnauthorizedError } from '../middleware/error';
 import { hashPassword, verifyPassword } from '../services/password.service';
+import { generateAccessToken } from '../services/token.service';
+import { loginRateLimiter } from '../middleware/rateLimit';
 
 export const authRouter = Router();
 
@@ -117,34 +118,58 @@ authRouter.post('/register', async (req: Request, res: Response, next: NextFunct
 
 /**
  * POST /api/auth/login
- * Authenticates a student with email and password, returning a JWT token.
+ * Authenticates a student using email and password.
+ * - Rate-limited to protect against brute-force abuse
+ * - Normalizes email consistently with registration (trimmed, lowercased)
+ * - Verifies password using constant-time bcrypt hashing
+ * - Employs generic error responses to prevent account enumeration
+ * - Issues a cryptographically signed, short-lived JWT access token
+ * - Strictly excludes password and passwordHash from the response
  */
-authRouter.post('/login', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const data = loginSchema.parse(req.body);
-    const normalizedEmail = data.email.toLowerCase().trim();
+authRouter.post(
+  '/login',
+  loginRateLimiter,
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const data = loginSchema.parse(req.body);
+      const normalizedEmail = data.email.toLowerCase().trim();
 
-    const user = await prisma.user.findUnique({
-      where: { email: normalizedEmail },
-    });
+      // Look up student in real database
+      const user = await prisma.user.findUnique({
+        where: { email: normalizedEmail },
+      });
 
-    if (!user) {
-      throw new UnauthorizedError('Invalid email or password');
+      // Generic authentication failure response to prevent account enumeration
+      if (!user) {
+        throw new UnauthorizedError('Invalid email or password');
+      }
+
+      // Verify submitted plaintext password against stored bcrypt hash
+      const isPasswordValid = await verifyPassword(data.password, user.passwordHash);
+      if (!isPasswordValid) {
+        throw new UnauthorizedError('Invalid email or password');
+      }
+
+      // Generate signed, short-lived JWT access token
+      const tokenResult = generateAccessToken({
+        id: user.id,
+        email: user.email,
+      });
+
+      res.status(200).json({
+        message: 'Login successful',
+        accessToken: tokenResult.accessToken,
+        token: tokenResult.accessToken, // Retained for compatibility
+        tokenType: tokenResult.tokenType,
+        expiresIn: tokenResult.expiresIn,
+        user: {
+          id: user.id,
+          displayName: user.displayName,
+          email: user.email,
+        },
+      });
+    } catch (err) {
+      next(err);
     }
-
-    const isPasswordValid = await verifyPassword(data.password, user.passwordHash);
-    if (!isPasswordValid) {
-      throw new UnauthorizedError('Invalid email or password');
-    }
-
-    const token = signToken({ userId: user.id, email: user.email });
-
-    res.json({
-      message: 'Login successful',
-      token,
-      user: sanitizeUser(user),
-    });
-  } catch (err) {
-    next(err);
-  }
-});
+  },
+);
