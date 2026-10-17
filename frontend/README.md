@@ -53,7 +53,7 @@
 
 ### 1. Installation
 ```bash
-cd C:\Users\User\.gemini\antigravity\scratch\campus-connect
+cd frontend
 npm install
 ```
 
@@ -61,7 +61,7 @@ npm install
 ```bash
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) (or the assigned port shown in console) to explore the workspace.
+Open [http://localhost:3000](http://localhost:3000) to explore the workspace.
 
 ### 3. Production Build
 ```bash
@@ -72,9 +72,8 @@ npm run start
 ---
 
 ## 📂 Project Architecture
-
-```
-campus-connect/
+```text
+frontend/
 ├── src/
 │   ├── app/
 │   │   ├── globals.css                       # Discord dark theme variables & custom scrollbar
@@ -97,13 +96,16 @@ campus-connect/
 │   │   │   └── CreateCommunityModal.tsx      # Community creation dialog
 │   │   ├── ai/
 │   │   │   └── AIAssistantDrawer.tsx         # Conversational CampusAI Copilot side-drawer
+│   │   ├── auth/
+│   │   │   └── LoginPage.tsx                 # Student Sign In & Account Registration
 │   │   ├── profile/
 │   │   │   └── StudentProfileModal.tsx       # Student profile, karma ledger & role switcher
 │   │   └── search/
 │   │       └── GlobalSearchModal.tsx         # Ctrl+K global command & query palette
 │   ├── services/
 │   │   ├── aiAssistantService.ts             # Natural language parser & data retrieval engine
-│   │   └── apiClient.ts                      # Centralized typed API client & mock adapter
+│   │   ├── apiClient.ts                      # Centralized typed API client & mock adapter
+│   │   └── authService.ts                    # Student authentication & session manager
 │   ├── data/
 │   │   ├── communityData.ts                  # Servers, channels, contributions, roster
 │   │   └── mockData.ts                       # Academic vault, placement debriefs, squads

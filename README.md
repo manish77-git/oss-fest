@@ -55,42 +55,41 @@ This repository is organized as a full-stack project:
 
 ---
 
-## Project Structure
+## Project Structure & Code Navigation
+
+This monorepo contains both the **Next.js 16 Web Application** and the **Express REST API Backend**:
 
 ```text
-├── LICENSE                 # MIT Open Source License
-├── package.json            # Project dependencies and scripts
-├── tsconfig.json           # TypeScript strict compiler configuration
-├── vitest.config.ts        # Vitest test runner configuration
-├── .env.example            # Environment variables template
+├── frontend/                          # 🌐 NEXT.JS 16 FRONTEND (Port 3000)
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── page.tsx               # Main Discord-inspired 4-pane application
+│   │   │   ├── layout.tsx             # Root layout & font styles
+│   │   │   └── globals.css            # Dark theme styles & Tailwind variables
+│   │   ├── components/
+│   │   │   ├── auth/LoginPage.tsx     # Student Login & Account Registration
+│   │   │   ├── layout/ServerRail.tsx  # Community server rail
+│   │   │   ├── layout/ChannelSidebar.tsx # Channel categories & navigation
+│   │   │   ├── chat/ConversationPanel.tsx # Chat messages & conversation stream
+│   │   │   ├── ai/AIAssistantDrawer.tsx # CampusAI Copilot assistant
+│   │   │   ├── profile/StudentProfileModal.tsx # Profile customization & karma
+│   │   │   └── contributions/         # Structured Good-First-Issue & Bug cards
+│   │   ├── data/                      # Campus channels & mock community data
+│   │   └── services/                  # CampusAI engine, API client & auth service
+│   ├── package.json                   # Frontend dependencies
+│   └── next.config.ts                 # Next.js Turbopack configuration
+│
+├── src/                               # ⚙️ EXPRESS REST API BACKEND (Port 4000)
+│   ├── server.ts                      # Server bootstrap on port 4000
+│   ├── app.ts                         # Express application & middleware
+│   ├── routes/                        # REST API endpoints (auth, users, channels, etc.)
+│   ├── middleware/                    # JWT auth, rate limiting & RBAC permissions
+│   └── services/                      # Token generation & password hashing
+│
 ├── prisma/
-│   ├── schema.prisma       # Database schema (User, Community, Member, Channel, Message)
-│   └── migrations/         # Reproducible SQL migration history
-├── src/
-│   ├── app.ts              # Express application factory & middleware setup
-│   ├── server.ts           # Server bootstrap and graceful shutdown handler
-│   ├── config.ts           # Environment variables configuration loader
-│   ├── db.ts               # PrismaClient singleton instance
-│   ├── types/              # Shared TypeScript interfaces and types
-│   ├── schemas/            # Zod validation schemas
-│   ├── middleware/
-│   │   ├── auth.ts         # JWT authentication & extraction middleware
-│   │   ├── permissions.ts  # Community membership & role check middleware
-│   │   └── error.ts        # Structured JSON error handler & custom AppErrors
-│   └── routes/
-│       ├── health.routes.ts       # Service health check endpoint
-│       ├── auth.routes.ts         # Student register & login endpoints
-│       ├── users.routes.ts        # Profile retrieval & update endpoints
-│       ├── communities.routes.ts  # Community, membership, and channel endpoints
-│       ├── channels.routes.ts     # Channel message feed & creation endpoints
-│       └── messages.routes.ts     # Message editing & moderation deletion endpoints
-└── tests/
-    ├── helpers.ts          # Test fixtures and database reset utilities
-    ├── auth.test.ts        # Registration & login tests
-    ├── users.test.ts       # Profile & permission tests
-    ├── communities.test.ts # Community lifecycle & membership tests
-    ├── channels.test.ts    # Channel creation & unique constraint tests
-    └── messages.test.ts    # Messaging & moderation tests
+│   └── schema.prisma                  # SQLite / PostgreSQL database schema
+├── tests/                             # Vitest end-to-end integration test suite
+└── package.json                       # Root backend dependencies & project scripts
 ```
 
 ---
@@ -102,18 +101,33 @@ This repository is organized as a full-stack project:
 - [Node.js](https://nodejs.org/) (version 20 or higher)
 - [npm](https://www.npmjs.com/) (version 9 or higher)
 
-### Installation
+### 1. Clone & Install
+```bash
+git clone https://github.com/manish77-git/oss-fest.git
+cd oss-fest
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/manish77-git/oss-fest.git
-   cd oss-fest
-   ```
+# Install backend dependencies
+npm install
 
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
+# Install frontend dependencies
+cd frontend && npm install && cd ..
+```
+
+### 2. Run the Applications
+
+#### Option A: Run Frontend (Next.js App on Port 3000)
+```bash
+cd frontend
+npm run dev
+```
+Open **[http://localhost:3000](http://localhost:3000)** in your browser.
+
+#### Option B: Run Backend (Express REST API on Port 4000)
+```bash
+npm run prisma:generate
+npm run dev
+```
+API runs at **[http://localhost:4000](http://localhost:4000)**.
 
 3. **Configure Environment Variables**:
    Copy the `.env.example` file to `.env`:
