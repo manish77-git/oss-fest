@@ -12,7 +12,9 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "db:verify": "tsx scripts/verify-db.ts",
-    "test": "vitest run"
+    "test": "vitest run",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:frontend": "npm --prefix frontend run build"
   },
   "keywords": [
     "campusconnect",

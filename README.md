@@ -1,13 +1,17 @@
-# CampusConnect Backend — Community Platform Foundation
+# CampusConnect — Full-Stack College Community & Open-Source Collaboration
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Next.js](https://img.shields.io/badge/Next.js-16%20Turbopack-black.svg)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19-61DAFB.svg)](https://react.dev/)
 [![Node.js](https://img.shields.io/badge/Node.js-v20%2B-green.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Strict-blue.svg)](https://www.typescriptlang.org/)
-[![Prisma](https://img.shields.io/badge/ORM-Prisma-2D3748.svg)](https://www.prisma.io/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-38B2AC.svg)](https://tailwindcss.com/)
 
-**CampusConnect** is an open-source, college-focused community and collaboration platform inspired by Discord. It empowers students to form college communities, discuss technical projects, coordinate open-source contributions, and interact with AI assistance.
+**CampusConnect** is an open-source, college-focused community and collaboration platform inspired by Discord. It empowers students to join campus communities, participate in channel-based discussions, coordinate open-source contributions, triage bug reports, and interact with the unified **CampusAI Copilot**.
 
-This repository contains the core **REST API backend foundation**, implementing production-grade authentication, student profiles, community lifecycle management, channel hierarchies, threaded chat messaging, and server-side role-based access control (RBAC).
+This repository is organized as a full-stack project:
+- **`frontend/`**: Interactive Discord-inspired web application built with **Next.js 16 (Turbopack)**, **React 19**, **Tailwind CSS v4**, and **Lucide Icons**, featuring CampusAI Copilot, structured contribution cards, and institutional login gating.
+- **`src/`**: Production-grade **REST API backend**, implementing secure JWT authentication, student profiles, community lifecycle management, channel hierarchies, and role-based permissions (RBAC).
 
 ---
 
