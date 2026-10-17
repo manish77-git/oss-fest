@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Menu, 
   X, 
@@ -88,16 +88,37 @@ export default function CampusConnectApp() {
     }
     setIsAuthChecked(true);
 
-    // Restore persisted data
+    // Restore persisted data (v3 key namespace for clean state)
     try {
-      const savedServers = localStorage.getItem('cc_servers_v2');
+      const savedServers = localStorage.getItem('cc_servers_v3');
       if (savedServers) setServers(JSON.parse(savedServers));
 
-      const savedContribs = localStorage.getItem('cc_contribs_v2');
-      if (savedContribs) setContributions(JSON.parse(savedContribs));
+      const savedContribs = localStorage.getItem('cc_contribs_v3');
+      if (savedContribs) {
+        const parsed: StructuredContribution[] = JSON.parse(savedContribs);
+        // Sanitize any legacy placeholder author names
+        const sanitized = parsed.map((c) => {
+          if (c.author && c.author.name === 'CampusConnect Lead') {
+            return {
+              ...c,
+              author: {
+                ...c.author,
+                name: 'Community Contributor',
+                handle: 'contributor',
+                bio: 'Open-Source Contributor @ CampusConnect Lab',
+              },
+            };
+          }
+          return c;
+        });
+        setContributions(sanitized);
+      }
 
-      const savedMsgs = localStorage.getItem('cc_msgs_map_v2');
-      if (savedMsgs) setMessagesMap(JSON.parse(savedMsgs));
+      const savedMsgs = localStorage.getItem('cc_msgs_map_v3');
+      if (savedMsgs) {
+        const parsed: Record<string, ChannelMessage[]> = JSON.parse(savedMsgs);
+        setMessagesMap(parsed);
+      }
     } catch (e) {
       console.warn('LocalStorage unavailable');
     }
@@ -123,20 +144,29 @@ export default function CampusConnectApp() {
     setCurrentUser(null);
   };
 
+  const handleUpdateProfile = (updated: User) => {
+    setCurrentUser(updated);
+    AuthService.updateCurrentUser(updated);
+    setSelectedProfileUser(updated);
+    setContributions((prev) =>
+      prev.map((c) => (c.author.id === updated.id ? { ...c, author: updated } : c))
+    );
+  };
+
   // Sync to localStorage on update
   const persistServers = (updated: CommunityServer[]) => {
     setServers(updated);
-    try { localStorage.setItem('cc_servers_v2', JSON.stringify(updated)); } catch (e) {}
+    try { localStorage.setItem('cc_servers_v3', JSON.stringify(updated)); } catch (e) {}
   };
 
   const persistMessages = (updated: Record<string, ChannelMessage[]>) => {
     setMessagesMap(updated);
-    try { localStorage.setItem('cc_msgs_map_v2', JSON.stringify(updated)); } catch (e) {}
+    try { localStorage.setItem('cc_msgs_map_v3', JSON.stringify(updated)); } catch (e) {}
   };
 
   const persistContribs = (updated: StructuredContribution[]) => {
     setContributions(updated);
-    try { localStorage.setItem('cc_contribs_v2', JSON.stringify(updated)); } catch (e) {}
+    try { localStorage.setItem('cc_contribs_v3', JSON.stringify(updated)); } catch (e) {}
   };
 
   // ─── Auth Gate: Show login page if not authenticated ───
@@ -163,7 +193,20 @@ export default function CampusConnectApp() {
   const activeServer = servers.find((s) => s.id === activeServerId) || servers[0];
   const activeChannel = activeServer.channels.find((c) => c.id === activeChannelId) || activeServer.channels[0];
   const activeChannelMessages = messagesMap[activeChannel?.id] || [];
-  const activeServerMembers = SERVER_MEMBERS[activeServer.id] || SERVER_MEMBERS['srv_opensource'];
+  const activeServerMembers: ServerMember[] = useMemo(() => {
+    const baseList = SERVER_MEMBERS[activeServer.id] || SERVER_MEMBERS['srv_opensource'];
+    const filtered = baseList.filter(
+      (m) => m.user.name !== 'CampusConnect Lead' && m.user.id !== currentUser.id
+    );
+    const currentUserMember: ServerMember = {
+      user: currentUser,
+      roleName: 'Student Member',
+      roleCategory: 'Student Contributors',
+      presence: 'online',
+      customStatus: 'Active in channel',
+    };
+    return [currentUserMember, ...filtered];
+  }, [activeServer.id, currentUser]);
 
   // Switch Server handler
   const handleSelectServer = (serverId: string) => {
@@ -607,6 +650,7 @@ export default function CampusConnectApp() {
         onClose={() => setSelectedProfileUser(null)}
         onLogout={handleLogout}
         isCurrentUser={selectedProfileUser?.id === currentUser.id}
+        onUpdateProfile={handleUpdateProfile}
       />
 
       {/* 10. Global Command Palette & Search (Ctrl+K) */}

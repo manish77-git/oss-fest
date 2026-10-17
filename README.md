@@ -6,12 +6,15 @@
 [![Node.js](https://img.shields.io/badge/Node.js-v20%2B-green.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Strict-blue.svg)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-38B2AC.svg)](https://tailwindcss.com/)
+[![Deploy to DigitalOcean](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/manish77-git/oss-fest/tree/main)
 
 **CampusConnect** is an open-source, college-focused community and collaboration platform inspired by Discord. It empowers students to join campus communities, participate in channel-based discussions, coordinate open-source contributions, triage bug reports, and interact with the unified **CampusAI Copilot**.
 
 This repository is organized as a full-stack project:
 - **`frontend/`**: Interactive Discord-inspired web application built with **Next.js 16 (Turbopack)**, **React 19**, **Tailwind CSS v4**, and **Lucide Icons**, featuring CampusAI Copilot, structured contribution cards, and institutional login gating.
 - **`src/`**: Production-grade **REST API backend**, implementing secure JWT authentication, student profiles, community lifecycle management, channel hierarchies, and role-based permissions (RBAC).
+
+[![Deploy to DigitalOcean](https://img.shields.io/badge/DigitalOcean-App%20Platform%20Ready-blue?logo=digitalocean&logoColor=white)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/manish77-git/oss-fest/tree/main)
 
 ---
 
@@ -52,6 +55,36 @@ This repository is organized as a full-stack project:
 | Frontend Bundler | Turbopack |
 | Version Control | Git & GitHub |
 | License | MIT |
+
+---
+
+## 🌊 DigitalOcean Deployment
+
+This repository is pre-configured with native **DigitalOcean App Platform** specification (`.do/app.yaml`) and **DigitalOcean Droplet (Docker)** support.
+
+### Method 1: DigitalOcean App Platform (1-Click Automated Deployment)
+
+[![Deploy to DigitalOcean](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/manish77-git/oss-fest/tree/main)
+
+1. Click **[Deploy to DigitalOcean](https://cloud.digitalocean.com/apps/new?repo=https://github.com/manish77-git/oss-fest/tree/main)**.
+2. Sign in to your DigitalOcean account and authorize GitHub access if prompted.
+3. DigitalOcean automatically reads `.do/app.yaml` and provisions:
+   - **`frontend`**: Next.js 16 Web Application with Turbopack (Port 3000)
+   - **`api`**: Express REST API & Prisma Engine (Port 4000)
+4. Click **Next** &rarr; **Create Resources**. DigitalOcean will build both services and assign free SSL domains!
+
+### Method 2: DigitalOcean Droplet (Docker Compose)
+
+Deploy to any DigitalOcean Ubuntu/Debian Droplet with a single command:
+
+```bash
+# Clone the repository on your Droplet
+git clone https://github.com/manish77-git/oss-fest.git
+cd oss-fest
+
+# Start backend & frontend containers in background
+docker compose up -d --build
+```
 
 ---
 

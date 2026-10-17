@@ -112,5 +112,6 @@ frontend/
 │   └── types/
 │       └── index.ts                          # TypeScript models for servers, channels, contributions
 ├── package.json
+├── Dockerfile
 └── tsconfig.json
 ```

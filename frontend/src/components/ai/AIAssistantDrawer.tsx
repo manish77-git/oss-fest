@@ -218,7 +218,7 @@ export const AIAssistantDrawer: React.FC<AIAssistantDrawerProps> = ({
                       <div className="font-bold text-white text-[11px]">{t.title}</div>
                       <div className="text-[10px] text-slate-400 mb-1">{t.competitionOrGoal}</div>
                       <button
-                        onClick={() => alert('Application sent to squad leader!')}
+                        onClick={() => alert('Application sent to squad organizer!')}
                         className="w-full py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-semibold"
                       >
                         Request to Join Squad

@@ -1,0 +1,46 @@
+name: oss-fest-campusconnect
+region: nyc
+services:
+  - name: frontend
+    source_dir: frontend
+    github:
+      repo: manish77-git/oss-fest
+      branch: main
+      deploy_on_push: true
+    build_command: npm run build
+    run_command: npm run start
+    environment_slug: node-js
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    http_port: 3000
+    routes:
+      - path: /
+    envs:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_API_URL
+        value: ${api.PUBLIC_URL}
+
+  - name: api
+    source_dir: /
+    github:
+      repo: manish77-git/oss-fest
+      branch: main
+      deploy_on_push: true
+    build_command: npm run prisma:generate && npm run build
+    run_command: npm run start
+    environment_slug: node-js
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    http_port: 4000
+    routes:
+      - path: /api
+    envs:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "4000"
+      - key: JWT_SECRET
+        value: campusconnect-digitalocean-production-secret-token-key-2026
+      - key: DATABASE_URL
+        value: file:./prisma/dev.db
