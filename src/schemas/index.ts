@@ -180,6 +180,47 @@ export const updateMemberRoleSchema = z.object({
   }),
 });
 
+export const explainIssueSchema = z
+  .object({
+    title: z
+      .string({ required_error: 'Issue title is required' })
+      .trim()
+      .min(1, 'Issue title cannot be empty')
+      .max(200, 'Issue title must not exceed 200 characters'),
+    body: z
+      .string({ required_error: 'Issue body is required' })
+      .trim()
+      .min(1, 'Issue body cannot be empty')
+      .max(10000, 'Issue body must not exceed 10000 characters'),
+  })
+  .strict();
+
+/**
+ * Every list item is validated as a non-empty string of sensible length.
+ * Small local models sometimes return more items than requested, so any extras
+ * are dropped instead of failing the whole response over item count.
+ */
+const explanationListSchema = z
+  .array(z.string().trim().min(1).max(500))
+  .transform((items) => items.slice(0, 10));
+
+/**
+ * Validates the JSON object returned by the local model. Extra keys are stripped,
+ * but every required field must be present and well-formed.
+ */
+export const issueExplanationSchema = z.object({
+  summary: z.string().trim().min(1, 'Summary cannot be empty').max(4000),
+  difficulty: z.preprocess(
+    (value) => (typeof value === 'string' ? value.trim().toLowerCase() : value),
+    z.enum(['beginner', 'intermediate', 'advanced']),
+  ),
+  prerequisites: explanationListSchema,
+  suggestedSteps: explanationListSchema,
+  questionsToAskMaintainer: explanationListSchema,
+});
+
+export type IssueExplanation = z.infer<typeof issueExplanationSchema>;
+
 export const messageQuerySchema = z.object({
   limit: z
     .string()

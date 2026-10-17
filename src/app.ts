@@ -10,6 +10,7 @@ import { usersRouter } from './routes/users.routes';
 import { communitiesRouter } from './routes/communities.routes';
 import { channelsRouter } from './routes/channels.routes';
 import { messagesRouter } from './routes/messages.routes';
+import { aiRouter } from './routes/ai.routes';
 
 function parseCorsOrigins(): boolean | string | string[] {
   if (!config.corsOrigin || config.corsOrigin === '*') {
@@ -38,6 +39,7 @@ export function createApp(): Express {
   app.use('/api/communities', communitiesRouter);
   app.use('/api/channels', channelsRouter);
   app.use('/api/messages', messagesRouter);
+  app.use('/api/ai', aiRouter);
 
   // 404 & Global Error Handling
   app.use(notFoundHandler);

@@ -59,6 +59,24 @@ export class InternalServerError extends AppError {
   }
 }
 
+export class BadGatewayError extends AppError {
+  constructor(message = 'The upstream service returned an invalid response', code = 'BAD_GATEWAY') {
+    super(message, 502, code);
+  }
+}
+
+export class ServiceUnavailableError extends AppError {
+  constructor(message = 'The requested service is unavailable', code = 'SERVICE_UNAVAILABLE') {
+    super(message, 503, code);
+  }
+}
+
+export class GatewayTimeoutError extends AppError {
+  constructor(message = 'The upstream service timed out', code = 'GATEWAY_TIMEOUT') {
+    super(message, 504, code);
+  }
+}
+
 export function notFoundHandler(req: Request, _res: Response, next: NextFunction): void {
   next(new NotFoundError(`Route ${req.method} ${req.path} not found`));
 }
