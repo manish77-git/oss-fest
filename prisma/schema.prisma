@@ -1,0 +1,97 @@
+// CampusConnect — Prisma Database Schema
+// Optimized for SQLite in local development and test environments,
+// and fully compatible with PostgreSQL for production deployments.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  displayName  String
+  avatarUrl    String?
+  bio          String?
+  department   String?
+  academicYear String?
+  skills       String   @default("") // Comma-separated or JSON list
+  interests    String   @default("") // Comma-separated or JSON list
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  createdCommunities Community[]       @relation("CommunityCreator")
+  memberships        CommunityMember[]
+  messages           Message[]
+
+  @@index([email])
+}
+
+model Community {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String   @default("")
+  creatorId   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  creator  User              @relation("CommunityCreator", fields: [creatorId], references: [id], onDelete: Restrict)
+  members  CommunityMember[]
+  channels Channel[]
+
+  @@index([creatorId])
+  @@index([name])
+}
+
+model CommunityMember {
+  id          String   @id @default(cuid())
+  communityId String
+  userId      String
+  role        String   @default("MEMBER") // OWNER | MODERATOR | MEMBER
+  joinedAt    DateTime @default(now())
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Enforces a single membership per user per community
+  @@unique([communityId, userId])
+  @@index([userId])
+  @@index([communityId, role])
+}
+
+model Channel {
+  id          String   @id @default(cuid())
+  communityId String
+  name        String
+  description String   @default("")
+  type        String   @default("GENERAL") // GENERAL | ANNOUNCEMENTS | PROJECT_DISCUSSION
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  messages  Message[]
+
+  // Channel names must be unique within a community
+  @@unique([communityId, name])
+  @@index([communityId])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  channelId String
+  authorId  String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  author  User    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([channelId, createdAt])
+  @@index([authorId])
+}
