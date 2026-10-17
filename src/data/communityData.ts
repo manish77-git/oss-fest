@@ -32,22 +32,25 @@ export const CAMPUS_BOT_USER: User = {
   githubUrl: 'https://github.com/manish77-git/oss-fest',
 };
 
-// ─── 2. Campus Community / Repository Maintainer ───
-export const CAMPUS_MAINTAINER_USER: User = {
-  id: 'usr_maintainer',
-  name: 'CampusConnect Lead',
-  handle: 'lead_maintainer',
+// ─── 2. Community Contributor (No fake personas or leads) ───
+export const COMMUNITY_CONTRIBUTOR_USER: User = {
+  id: 'usr_contributor',
+  name: 'Community Contributor',
+  handle: 'contributor',
   avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
-  email: 'maintainer@ait.edu',
+  email: 'contributor@campus.edu',
   college: 'Apex Institute of Technology',
   department: 'Computer Science',
-  year: 'Senior (4th Yr)',
+  year: 'Junior (3rd Yr)',
   isVerified: true,
-  bio: 'Lead Maintainer @ CampusConnect Open-Source Lab',
-  points: 1200,
-  achievements: ['Repository Owner', 'Open-Source Lead'],
+  bio: 'Open-Source Contributor & Student Developer @ CampusConnect Lab',
+  points: 650,
+  achievements: ['Open-Source Contributor', 'Verified Student'],
   githubUrl: 'https://github.com/manish77-git/oss-fest',
 };
+
+// Aliased for seamless internal compatibility
+export const CAMPUS_MAINTAINER_USER: User = COMMUNITY_CONTRIBUTOR_USER;
 
 export const CAMPUS_ADMIN_USER: User = {
   id: 'usr_dean',
@@ -66,7 +69,8 @@ export const CAMPUS_ADMIN_USER: User = {
 // Clean reference object without fake student personas
 export const MOCK_STUDENTS: Record<string, User> = {
   ai: CAMPUS_BOT_USER,
-  maintainer: CAMPUS_MAINTAINER_USER,
+  contributor: COMMUNITY_CONTRIBUTOR_USER,
+  maintainer: COMMUNITY_CONTRIBUTOR_USER,
 };
 
 // Initial Structured Contributions (Open-Source Lab)
@@ -545,7 +549,7 @@ export const INITIAL_CHANNEL_MESSAGES: Record<string, ChannelMessage[]> = {
       contribution: INITIAL_CONTRIBUTIONS[5],
       reactions: [
         { emoji: '💡', count: 8, users: ['usr_campus_ai'] },
-        { emoji: '🙌', count: 5, users: ['usr_maintainer'] }
+        { emoji: '🙌', count: 5, users: ['usr_contributor'] }
       ],
     },
     {
@@ -657,11 +661,11 @@ export const SERVER_MEMBERS: Record<string, ServerMember[]> = {
       customStatus: 'Autonomous real-time intelligence active',
     },
     {
-      user: CAMPUS_MAINTAINER_USER,
-      roleName: 'Core Maintainer',
-      roleCategory: 'Core Maintainers',
+      user: COMMUNITY_CONTRIBUTOR_USER,
+      roleName: 'Contributor',
+      roleCategory: 'Student Contributors',
       presence: 'online',
-      customStatus: 'Triaging open-source PRs & issues',
+      customStatus: 'Contributing open-source PRs & issues',
     },
   ],
   srv_campus: [
@@ -686,9 +690,9 @@ export const SERVER_MEMBERS: Record<string, ServerMember[]> = {
       presence: 'online',
     },
     {
-      user: CAMPUS_MAINTAINER_USER,
-      roleName: 'Lead Maintainer',
-      roleCategory: 'Core Maintainers',
+      user: COMMUNITY_CONTRIBUTOR_USER,
+      roleName: 'Contributor',
+      roleCategory: 'Student Contributors',
       presence: 'online',
     },
   ],
@@ -700,9 +704,9 @@ export const SERVER_MEMBERS: Record<string, ServerMember[]> = {
       presence: 'online',
     },
     {
-      user: CAMPUS_MAINTAINER_USER,
-      roleName: 'Guild Mentor',
-      roleCategory: 'Mentors & Seniors',
+      user: COMMUNITY_CONTRIBUTOR_USER,
+      roleName: 'Contributor',
+      roleCategory: 'Student Contributors',
       presence: 'online',
     },
   ],

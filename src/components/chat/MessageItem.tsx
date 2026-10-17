@@ -84,7 +84,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
 
   const handleApplySquad = (listingId: string) => {
     setAppliedSquads(prev => ({ ...prev, [listingId]: true }));
-    alert('Squad Application sent to team lead with your CampusConnect profile!');
+    alert('Squad Application sent to team organizer with your CampusConnect profile!');
   };
 
   // Render markdown-like simple formatting (bold, code blocks)

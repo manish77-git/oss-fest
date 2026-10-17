@@ -153,6 +153,22 @@ export class AuthService {
     return { success: true, user: newUser };
   }
 
+  public static updateCurrentUser(user: User): void {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+    const stored = localStorage.getItem('cc_registered_users');
+    if (stored) {
+      try {
+        const accounts: Array<User & { password?: string }> = JSON.parse(stored);
+        const idx = accounts.findIndex((a) => a.id === user.id || a.email === user.email);
+        if (idx !== -1) {
+          accounts[idx] = { ...accounts[idx], ...user };
+          localStorage.setItem('cc_registered_users', JSON.stringify(accounts));
+        }
+      } catch (e) {}
+    }
+  }
+
   public static logout(): void {
     if (typeof window !== 'undefined') {
       localStorage.removeItem(AUTH_STORAGE_KEY);
