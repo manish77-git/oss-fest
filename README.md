@@ -227,21 +227,118 @@ Protected endpoints require the `Authorization: Bearer <TOKEN>` header.
     - Abuse protection: returns `429 Too Many Requests` with a `Retry-After` header when rate limits are exceeded.
     - Stateless token lifecycle: tokens expire automatically after `expiresIn` seconds (1800s / 30m); clients log out by discarding the stored token.
 
+- **`GET /api/auth/session`**
+  - **Auth**: Required (`Authorization: Bearer <TOKEN>`)
+  - **Description**: Protected test endpoint verifying authentication middleware and identifying the active student.
+  - **Response** `200 OK`:
+    ```json
+    {
+      "status": "authenticated",
+      "user": {
+        "id": "cmvc3...",
+        "email": "student@college.edu"
+      }
+    }
+    ```
+  - **Error Response** `401 Unauthorized`: Returned when Authorization header is missing, malformed, expired, invalid, or belongs to a deleted account.
+
 ---
 
-### 3. Student Profiles
+### 3. Student Profiles (Feature 06)
 - **`GET /api/users/me`**
-  - **Auth**: Required
-  - **Response** `200 OK`: Returns the authenticated student's full profile and their community memberships.
+  - **Auth**: Required (`Authorization: Bearer <TOKEN>`)
+  - **Description**: Retrieves the authenticated student's private profile. The identity is extracted directly from the verified JWT token; any client-supplied user ID in query parameters or body is ignored.
+  - **Response** `200 OK`:
+    ```json
+    {
+      "user": {
+        "id": "cmvc3...",
+        "email": "student@college.edu",
+        "displayName": "Alex Chen",
+        "avatarUrl": "https://cdn.example.com/avatar.png",
+        "bio": "CS junior interested in open source and distributed systems.",
+        "department": "Computer Science",
+        "academicYear": "Junior",
+        "skills": ["TypeScript", "Python", "Rust"],
+        "interests": ["Open source", "Distributed systems"],
+        "createdAt": "2026-10-17T06:00:00.000Z",
+        "updatedAt": "2026-10-17T06:30:00.000Z",
+        "memberships": []
+      }
+    }
+    ```
+  - **Security & Privacy**:
+    - Password hashes, salt rounds, and internal tokens are never returned.
+    - Safely returns `401 Unauthorized` or `404 Not Found` if the user account was deleted or is unavailable.
 
 - **`PATCH /api/users/me`**
-  - **Auth**: Required
-  - **Body**: Permitted fields: `displayName`, `avatarUrl`, `bio`, `department`, `academicYear`, `skills`, `interests`.
-  - **Response** `200 OK`: Returns updated sanitized student profile.
+  - **Auth**: Required (`Authorization: Bearer <TOKEN>`)
+  - **Description**: Allows students to update permitted profile fields for their own account only.
+  - **Editable Fields**:
+    - `displayName` (string, 1–60 chars, trimmed)
+    - `avatarUrl` (valid HTTP/HTTPS URL, or null/empty string to clear)
+    - `bio` (string, max 300 chars, nullable)
+    - `department` (string, max 100 chars, nullable)
+    - `academicYear` (string up to 20 chars, or integer 1–10, nullable)
+    - `skills` (array of trimmed strings, max 30 items, max 50 chars per item, nullable)
+    - `interests` (array of trimmed strings, max 30 items, max 50 chars per item, nullable)
+  - **Request Body Example**:
+    ```json
+    {
+      "bio": "Specializing in cloud systems and contributing to open-source.",
+      "academicYear": 3,
+      "skills": ["TypeScript", "Go", "Docker"]
+    }
+    ```
+  - **Response** `200 OK`:
+    ```json
+    {
+      "message": "Profile updated successfully",
+      "user": {
+        "id": "cmvc3...",
+        "email": "student@college.edu",
+        "displayName": "Alex Chen",
+        "avatarUrl": "https://cdn.example.com/avatar.png",
+        "bio": "Specializing in cloud systems and contributing to open-source.",
+        "department": "Computer Science",
+        "academicYear": "3",
+        "skills": ["TypeScript", "Go", "Docker"],
+        "interests": ["Open source"],
+        "createdAt": "2026-10-17T06:00:00.000Z"
+      }
+    }
+    ```
+  - **Validation & Security**:
+    - Empty payloads (`{}`) are rejected with `400 Bad Request`.
+    - Partial updates are fully supported: omitted fields remain unchanged.
+    - Protected fields (`id`, `email`, `passwordHash`, `role`, `createdAt`) are strictly rejected with `400 Bad Request`.
+    - Cross-user tampering is impossible: updates always target `req.user.id` verified from the token.
 
 - **`GET /api/users/:id`**
-  - **Auth**: Public
-  - **Response** `200 OK`: Returns public profile information. Password hashes and credentials are never exposed.
+  - **Auth**: Public (No authentication required)
+  - **Description**: Retrieves public profile information for any student.
+  - **Public Fields**: `id`, `displayName`, `avatarUrl`, `bio`, `department`, `academicYear`, `skills` (string array), `interests` (string array), `createdAt`.
+  - **Response** `200 OK`:
+    ```json
+    {
+      "user": {
+        "id": "cmvc3...",
+        "displayName": "Alex Chen",
+        "avatarUrl": "https://cdn.example.com/avatar.png",
+        "bio": "Specializing in cloud systems and contributing to open-source.",
+        "department": "Computer Science",
+        "academicYear": "3",
+        "skills": ["TypeScript", "Go", "Docker"],
+        "interests": ["Open source"],
+        "createdAt": "2026-10-17T06:00:00.000Z"
+      }
+    }
+    ```
+  - **Security & Privacy**:
+    - Public profiles strictly omit `email`, `passwordHash`, credentials, and tokens.
+    - Validates student ID format (alphanumeric, 1–64 characters); returns `400 Bad Request` for invalid formats.
+    - Returns `404 Not Found` for nonexistent student IDs.
+    - Strictly read-only: retrieval cannot mutate records.
 
 ---
 

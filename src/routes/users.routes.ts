@@ -1,7 +1,7 @@
 import { Router, Response, NextFunction } from 'express';
 import { prisma } from '../db';
 import { authenticate } from '../middleware/auth';
-import { NotFoundError } from '../middleware/error';
+import { BadRequestError, NotFoundError } from '../middleware/error';
 import { updateUserSchema } from '../schemas';
 import { AuthenticatedRequest } from '../types';
 import { sanitizeUser } from './auth.routes';
@@ -18,6 +18,8 @@ function formatList(val: unknown): string {
 /**
  * GET /api/users/me
  * Retrieves current student's authenticated profile with active memberships.
+ * Requires valid authentication token. Returns user's own email and permitted profile fields.
+ * Never returns password hashes or secret credentials.
  */
 usersRouter.get('/me', authenticate, async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -39,7 +41,7 @@ usersRouter.get('/me', authenticate, async (req: AuthenticatedRequest, res: Resp
     });
 
     if (!user) {
-      throw new NotFoundError('User not found');
+      throw new NotFoundError('User profile not found or account unavailable');
     }
 
     res.json({
@@ -61,14 +63,20 @@ usersRouter.get('/me', authenticate, async (req: AuthenticatedRequest, res: Resp
 /**
  * PATCH /api/users/me
  * Updates allowed profile fields for the authenticated student.
+ * Uses authenticated identity from token rather than client input.
+ * Supports partial updates while strictly rejecting protected fields (email, id, passwordHash, role).
  */
 usersRouter.patch('/me', authenticate, async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
+    if (!req.body || typeof req.body !== 'object' || Object.keys(req.body).length === 0) {
+      throw new BadRequestError('At least one editable profile field must be provided');
+    }
+
     const data = updateUserSchema.parse(req.body);
 
     const updateData: Record<string, unknown> = {};
     if (data.displayName !== undefined) updateData.displayName = data.displayName;
-    if (data.avatarUrl !== undefined) updateData.avatarUrl = data.avatarUrl;
+    if (data.avatarUrl !== undefined) updateData.avatarUrl = data.avatarUrl === '' ? null : data.avatarUrl;
     if (data.bio !== undefined) updateData.bio = data.bio;
     if (data.department !== undefined) updateData.department = data.department;
     if (data.academicYear !== undefined) updateData.academicYear = data.academicYear;
@@ -91,12 +99,20 @@ usersRouter.patch('/me', authenticate, async (req: AuthenticatedRequest, res: Re
 
 /**
  * GET /api/users/:id
- * Public student profile view, omitting credentials and sensitive account data.
+ * Public student profile view, omitting credentials, email, and sensitive account data.
+ * Validates the requested student ID format and returns 404 for nonexistent students.
  */
 usersRouter.get('/:id', async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
+    const { id } = req.params;
+
+    // Validate ID format: non-empty alphanumeric string (with hyphens/underscores, 1-64 chars)
+    if (!id || !/^[a-zA-Z0-9_-]{1,64}$/.test(id)) {
+      throw new BadRequestError('Invalid user ID format');
+    }
+
     const user = await prisma.user.findUnique({
-      where: { id: req.params.id },
+      where: { id },
       select: {
         id: true,
         displayName: true,

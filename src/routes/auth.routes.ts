@@ -6,6 +6,8 @@ import { ConflictError, UnauthorizedError } from '../middleware/error';
 import { hashPassword, verifyPassword } from '../services/password.service';
 import { generateAccessToken } from '../services/token.service';
 import { loginRateLimiter } from '../middleware/rateLimit';
+import { authenticate } from '../middleware/auth';
+import { AuthenticatedRequest } from '../types';
 
 export const authRouter = Router();
 
@@ -173,3 +175,24 @@ authRouter.post(
     }
   },
 );
+
+/**
+ * GET /api/auth/session
+ * Protected test endpoint demonstrating authentication middleware.
+ * Returns confirmation and the authenticated student's identifier.
+ * Unauthenticated requests are rejected with HTTP 401 Unauthorized.
+ */
+authRouter.get(
+  '/session',
+  authenticate,
+  (req: AuthenticatedRequest, res: Response): void => {
+    res.status(200).json({
+      status: 'authenticated',
+      user: {
+        id: req.user!.id,
+        email: req.user!.email,
+      },
+    });
+  },
+);
+

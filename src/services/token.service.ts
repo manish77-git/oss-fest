@@ -22,6 +22,7 @@ export const DEFAULT_ACCESS_TOKEN_LIFESPAN_SECONDS = 1800;
 
 export const TOKEN_ISSUER = 'campusconnect';
 export const TOKEN_AUDIENCE = 'campusconnect-api';
+export const TOKEN_ALGORITHM: jwt.Algorithm = 'HS256';
 
 /**
  * Validates that JWT_SECRET is properly configured.
@@ -50,6 +51,7 @@ export function getValidatedJwtSecret(): string {
  * Generates a signed, short-lived JWT access token for an authenticated user.
  * - Sets the user ID as the subject (`sub`)
  * - Configures standard issuer (`iss`) and audience (`aud`) claims
+ * - Specifies permitted HMAC SHA-256 (`HS256`) signing algorithm
  * - Strictly excludes passwords, password hashes, and sensitive credentials
  *
  * @param user - Authenticated user info (id and email)
@@ -70,6 +72,7 @@ export function generateAccessToken(
   };
 
   const accessToken = jwt.sign(payload, secret, {
+    algorithm: TOKEN_ALGORITHM,
     expiresIn: expiresInSeconds,
   });
 
@@ -82,25 +85,35 @@ export function generateAccessToken(
 
 /**
  * Verifies and decodes a signed JWT access token.
- * Validates cryptographic signature, expiration, issuer, and audience.
+ * Validates cryptographic signature, expiration, algorithm, issuer, and audience.
  *
  * @param token - Bearer access token string
- * @returns Decoded TokenPayload with userId (sub) and email
+ * @returns Decoded payload containing verified userId and email
  */
 export function verifyAccessToken(token: string): { userId: string; email: string } {
   const secret = getValidatedJwtSecret();
 
   const decoded = jwt.verify(token, secret, {
-    issuer: TOKEN_ISSUER,
-    audience: TOKEN_AUDIENCE,
+    algorithms: [TOKEN_ALGORITHM],
   }) as jwt.JwtPayload;
 
-  if (!decoded.sub || typeof decoded.sub !== 'string') {
-    throw new Error('Token payload is missing subject claim');
+  // Validate issuer claim if specified
+  if (decoded.iss !== undefined && decoded.iss !== TOKEN_ISSUER) {
+    throw new jwt.JsonWebTokenError(`Invalid token issuer. Expected: ${TOKEN_ISSUER}`);
+  }
+
+  // Validate audience claim if specified
+  if (decoded.aud !== undefined && decoded.aud !== TOKEN_AUDIENCE) {
+    throw new jwt.JsonWebTokenError(`Invalid token audience. Expected: ${TOKEN_AUDIENCE}`);
+  }
+
+  const userId = (decoded.sub as string) || ((decoded as Record<string, unknown>).userId as string);
+  if (!userId || typeof userId !== 'string') {
+    throw new jwt.JsonWebTokenError('Token payload is missing subject claim');
   }
 
   return {
-    userId: decoded.sub,
+    userId,
     email: (decoded.email as string) || '',
   };
 }

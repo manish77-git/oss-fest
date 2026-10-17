@@ -64,20 +64,63 @@ export const loginSchema = z
   .strict();
 
 
-export const updateUserSchema = z.object({
-  displayName: z
-    .string()
-    .trim()
-    .min(2, 'Display name must be at least 2 characters')
-    .max(50, 'Display name must not exceed 50 characters')
-    .optional(),
-  avatarUrl: z.string().trim().url('Invalid avatar URL').optional().nullable(),
-  bio: z.string().trim().max(300, 'Bio must not exceed 300 characters').optional().nullable(),
-  department: z.string().trim().max(100, 'Department must not exceed 100 characters').optional().nullable(),
-  academicYear: z.string().trim().max(20, 'Academic year must not exceed 20 characters').optional().nullable(),
-  skills: z.union([z.string(), z.array(z.string())]).optional().nullable(),
-  interests: z.union([z.string(), z.array(z.string())]).optional().nullable(),
-});
+export const updateUserSchema = z
+  .object({
+    displayName: z
+      .string()
+      .trim()
+      .min(1, 'Display name cannot be empty')
+      .max(60, 'Display name must not exceed 60 characters')
+      .optional(),
+    avatarUrl: z
+      .string()
+      .trim()
+      .url('Invalid avatar URL format')
+      .refine(
+        (url) => url.startsWith('http://') || url.startsWith('https://'),
+        'Avatar URL must use http or https protocol',
+      )
+      .optional()
+      .nullable()
+      .or(z.literal('')),
+    bio: z.string().trim().max(300, 'Bio must not exceed 300 characters').optional().nullable(),
+    department: z.string().trim().max(100, 'Department must not exceed 100 characters').optional().nullable(),
+    academicYear: z
+      .union([
+        z.string().trim().min(1, 'Academic year cannot be empty').max(20, 'Academic year must not exceed 20 characters'),
+        z.number().int().min(1, 'Academic year must be between 1 and 10').max(10, 'Academic year must be between 1 and 10').transform((n) => n.toString()),
+      ])
+      .optional()
+      .nullable(),
+    skills: z
+      .array(
+        z
+          .string()
+          .trim()
+          .min(1, 'Skill item cannot be empty')
+          .max(50, 'Skill item cannot exceed 50 characters'),
+      )
+      .max(30, 'Cannot exceed 30 skills')
+      .optional()
+      .nullable(),
+    interests: z
+      .array(
+        z
+          .string()
+          .trim()
+          .min(1, 'Interest item cannot be empty')
+          .max(50, 'Interest item cannot exceed 50 characters'),
+      )
+      .max(30, 'Cannot exceed 30 interests')
+      .optional()
+      .nullable(),
+  })
+  .strict()
+  .refine(
+    (data) => Object.keys(data).length > 0,
+    { message: 'At least one editable profile field must be provided' },
+  );
+
 
 export const createCommunitySchema = z.object({
   name: z
