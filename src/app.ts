@@ -1,3 +1,4 @@
+import path from 'path';
 import express, { Express } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
@@ -21,10 +22,14 @@ export function createApp(): Express {
   const app = express();
 
   app.disable('x-powered-by');
-  app.use(helmet());
+  app.use(helmet({ contentSecurityPolicy: false }));
   app.use(cors({ origin: parseCorsOrigins(), credentials: true }));
   app.use(express.json({ limit: '64kb' }));
   app.use(express.urlencoded({ extended: true, limit: '64kb' }));
+
+  // Serve Frontend Static Display
+  const publicDir = path.join(process.cwd(), 'public');
+  app.use(express.static(publicDir));
 
   // API Routes
   app.use('/api/health', healthRouter);
