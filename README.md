@@ -28,17 +28,30 @@ This repository is organized as a full-stack project:
 
 ---
 
-## Tech Stack
+## 🛠️ Tech Stack
 
 | Layer | Technology |
 |---|---|
-| **Runtime** | Node.js (v20+ recommended) |
-| **Language** | TypeScript 5 (Strict Mode) |
-| **Framework** | Express 4 |
-| **Database & ORM** | Prisma ORM with SQLite (Local dev) / PostgreSQL (Production) |
-| **Security** | Helmet, CORS, Bcrypt.js, JSON Web Tokens (JWT) |
-| **Validation** | Zod v3 |
-| **Testing** | Vitest, Supertest |
+| Frontend Framework | Next.js 16 (App Router) |
+| UI Library | React 19, React DOM |
+| Language | TypeScript 5 |
+| Styling | Tailwind CSS v4 |
+| UI Icons | Lucide React |
+| CSS Utilities | clsx, tailwind-merge |
+| Backend Runtime | Node.js |
+| Backend Framework | Express.js 4 |
+| API & Middleware | CORS, Helmet, dotenv |
+| Authentication | JSON Web Tokens (JWT) |
+| Password Security | bcryptjs |
+| Validation | Zod |
+| Database ORM | Prisma ORM 6 |
+| Database (Development) | SQLite |
+| Database (Production) | PostgreSQL |
+| Testing | Vitest, Supertest |
+| Build & Development | TypeScript, tsx, npm |
+| Frontend Bundler | Turbopack |
+| Version Control | Git & GitHub |
+| License | MIT |
 
 ---
 
